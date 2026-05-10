@@ -388,11 +388,12 @@ pub fn render_table_row(
                 }
                 for span in formatted {
                     // Plain text spans: apply row/header style; styled spans (code etc.) keep their style
-                    let effective_style = if span.style == ratatui::style::Style::default() {
-                        style
-                    } else {
-                        span.style
-                    };
+                    let effective_style =
+                        if span.style == Style::default() || span.style == ctx.theme.text_style() {
+                            style
+                        } else {
+                            span.style
+                        };
                     spans.push(Span::styled(span.content.into_owned(), effective_style));
                 }
                 if trail > 0 {
@@ -790,6 +791,37 @@ mod tests {
 
             // Should have spaces, not arrow
             assert_eq!(line.spans[0].content, "  ");
+        }
+
+        #[test]
+        fn test_header_inline_code_keeps_surrounding_header_style() {
+            let theme = test_theme();
+            let cells = vec!["Use `foo` now".to_string()];
+            let col_widths = vec![20];
+            let alignments = vec![Alignment::Left];
+
+            let ctx = TableRenderContext {
+                theme: &theme,
+                row_num: 0,
+                is_header: true,
+                in_table_mode: false,
+                is_table_selected: false,
+                selected_cell: None,
+            };
+
+            let row_lines = render_table_row(&cells, &col_widths, &alignments, &ctx);
+            let line = &row_lines[0];
+
+            let trailing_text = line
+                .spans
+                .iter()
+                .find(|span| span.content.as_ref() == " now")
+                .expect("expected plain trailing text after inline code");
+
+            assert!(
+                trailing_text.style.add_modifier.contains(Modifier::BOLD),
+                "plain text after inline code in a header cell should keep header styling"
+            );
         }
     }
 }

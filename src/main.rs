@@ -208,13 +208,18 @@ fn main() -> Result<()> {
         return handle_query_mode(&doc, query_str, args.query_output.as_deref());
     }
 
+    #[cfg(feature = "unstable-dynamic")]
+    let setup_completions_requested = args.setup_completions;
+    #[cfg(not(feature = "unstable-dynamic"))]
+    let setup_completions_requested = false;
+
     // If no flags, launch TUI
     if !args.list
         && !args.tree
         && !args.count
         && args.section.is_none()
         && args.at_line.is_none()
-        && !args.setup_completions
+        && !setup_completions_requested
     {
         // Load configuration
         let mut config = treemd::Config::load();

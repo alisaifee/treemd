@@ -4,22 +4,34 @@ use std::path::PathBuf;
 #[cfg(feature = "unstable-dynamic")]
 use clap_complete::engine::{ArgValueCompleter, CompletionCandidate, ValueCompleter};
 
+#[cfg(feature = "unstable-dynamic")]
+const LONG_ABOUT: &str = "treemd - A modern markdown viewer combining tree-based navigation with interactive TUI.\n\n\
+Launch without flags for interactive mode with dual-pane interface, vim-style navigation,\n\
+syntax highlighting, and real-time search. Use flags for CLI mode to extract, filter,\n\
+and analyze markdown structure.\n\n\
+Examples:\n  \
+treemd README.md              # Interactive TUI mode\n  \
+treemd -l README.md           # List all headings\n  \
+treemd --tree README.md       # Show heading tree\n  \
+treemd -s Installation doc.md # Extract section\n  \
+treemd --setup-completions    # Set up shell completions";
+
+#[cfg(not(feature = "unstable-dynamic"))]
+const LONG_ABOUT: &str = "treemd - A modern markdown viewer combining tree-based navigation with interactive TUI.\n\n\
+Launch without flags for interactive mode with dual-pane interface, vim-style navigation,\n\
+syntax highlighting, and real-time search. Use flags for CLI mode to extract, filter,\n\
+and analyze markdown structure.\n\n\
+Examples:\n  \
+treemd README.md              # Interactive TUI mode\n  \
+treemd -l README.md           # List all headings\n  \
+treemd --tree README.md       # Show heading tree\n  \
+treemd -s Installation doc.md # Extract section";
+
 #[derive(Parser, Debug)]
 #[command(name = "treemd")]
 #[command(version)]
 #[command(about = "A markdown navigator with tree-based structural navigation")]
-#[command(
-    long_about = "treemd - A modern markdown viewer combining tree-based navigation with interactive TUI.\n\n\
-    Launch without flags for interactive mode with dual-pane interface, vim-style navigation,\n\
-    syntax highlighting, and real-time search. Use flags for CLI mode to extract, filter,\n\
-    and analyze markdown structure.\n\n\
-    Examples:\n  \
-    treemd README.md              # Interactive TUI mode\n  \
-    treemd -l README.md           # List all headings\n  \
-    treemd --tree README.md       # Show heading tree\n  \
-    treemd -s Installation doc.md # Extract section\n  \
-    treemd --setup-completions    # Set up shell completions"
-)]
+#[command(long_about = LONG_ABOUT)]
 pub struct Cli {
     /// Markdown file(s) to view (.md or .markdown), directory, or '-' for stdin
     ///
@@ -110,6 +122,7 @@ pub struct Cli {
     /// Interactive helper to configure tab completion for your shell (bash/zsh/fish).
     /// Detects your shell, finds the config file, and offers to add completion setup.
     /// Completions intelligently filter to show only .md/.markdown files.
+    #[cfg(feature = "unstable-dynamic")]
     #[arg(long = "setup-completions")]
     pub setup_completions: bool,
 

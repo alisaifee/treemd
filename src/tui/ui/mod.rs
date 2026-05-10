@@ -1488,7 +1488,7 @@ fn render_markdown_enhanced(
     selected_element_id: Option<crate::tui::interactive::ElementId>,
     interactive_state: Option<&crate::tui::interactive::InteractiveState>,
     available_width: Option<u16>,
-    mermaid_placeholder_rows: &std::collections::HashMap<u64, usize>,
+    _mermaid_placeholder_rows: &std::collections::HashMap<u64, usize>,
 ) -> Text<'static> {
     let mut lines = Vec::new();
 
@@ -1616,7 +1616,7 @@ fn render_markdown_enhanced(
                         #[cfg(all(feature = "mermaid", unix))]
                         {
                             let hash = MermaidApp::mermaid_source_hash(content);
-                            mermaid_placeholder_rows
+                            _mermaid_placeholder_rows
                                 .get(&hash)
                                 .copied()
                                 .unwrap_or_else(|| mermaid_placeholder_lines(content))
