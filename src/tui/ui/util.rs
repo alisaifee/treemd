@@ -446,8 +446,12 @@ pub fn strip_latex(content: &str) -> String {
     static MULTI_SPACE: OnceLock<Regex> = OnceLock::new();
 
     let superscript = SUPERSCRIPT.get_or_init(|| Regex::new(r"\^\{?([0-9+\-=()nix])\}?").unwrap());
-    let subscript =
-        SUBSCRIPT.get_or_init(|| Regex::new(r"_\{?([0-9+\-=()aehijklmnoprstuvx])\}?").unwrap());
+    let subscript = SUBSCRIPT.get_or_init(|| {
+        Regex::new(
+            r"_(?:\{([0-9+\-=()aehijklmnoprstuvx])\}|([0-9+\-=()aehijklmnoprstuvx])([^a-zA-Z_]|$))",
+        )
+        .unwrap()
+    });
     let display_math = DISPLAY_MATH.get_or_init(|| Regex::new(r"\$\$[\s\S]*?\$\$").unwrap());
     let inline_math = INLINE_MATH.get_or_init(|| Regex::new(r"\$([^\$\n]+)\$").unwrap());
     let paren_math = PAREN_MATH.get_or_init(|| Regex::new(r"\\\(([\s\S]*?)\\\)").unwrap());
@@ -606,12 +610,19 @@ pub fn strip_latex(content: &str) -> String {
         })
         .to_string();
 
-    // Replace _x with subscript if x is in map
+    // Replace _{x} or _x (when not mid-identifier) with subscript
     result = subscript
         .replace_all(&result, |caps: &Captures| {
-            let val = caps[1].chars().next().unwrap();
+            let (val, trailing) = if let Some(m) = caps.get(1) {
+                (m.as_str().chars().next().unwrap(), "")
+            } else {
+                (
+                    caps[2].chars().next().unwrap(),
+                    caps.get(3).map_or("", |m| m.as_str()),
+                )
+            };
             to_subscript(val)
-                .map(|v| v.to_string())
+                .map(|v| format!("{v}{trailing}"))
                 .unwrap_or_else(|| caps[0].to_string())
         })
         .to_string();
@@ -1095,6 +1106,12 @@ mod tests {
             let content = "Text\n```rust\nlet x_n = 1;\n```\nMore text";
             let result = strip_latex(content);
             assert!(result.contains("x_n"), "fenced code mangled: {result}");
+        }
+
+        #[test]
+        fn test_subscript_preserves_snake_case() {
+            assert_eq!(strip_latex("x_1 + z_{i}th"), "x₁ + zᵢth");
+            assert_eq!(strip_latex("i_am_a_snake x_1"), "i_am_a_snake x₁");
         }
     }
 
